@@ -1,4 +1,4 @@
-<#	
+<#
 	.NOTES
 	===========================================================================
 	 Created with: 	SAPIEN Technologies, Inc., PowerShell Studio 2019 v5.6.160
@@ -53,10 +53,10 @@
 #---------------------------------------------------------- FUNCTION DECLARATIONS --------------------------------------------------------------------------
 function Check-PowerCLI()
 {
-<# Notes:  
+<# Notes:
 	Installs VMware PowerCLI if module is not loaded
 #>
-	
+
 	if (Get-Module -ListAvailable -Name VMware.PowerCLI)
 	{
 		Write-Output ("Check: VMware PowerCLI Module: Installed")
@@ -74,10 +74,10 @@ function Check-VWWareViewBroker()
 <# Notes:
 	Installs VMware View Broker if module is not loaded
 #>
-	
+
 	if (Get-Module -ListAvailable -Name VMware.View.Broker)
 	{
-		
+
 		Write-Output ("Check: Vmware.View.Broker Module: Installed")
 	}
 	else
@@ -86,21 +86,21 @@ function Check-VWWareViewBroker()
 		Write-Output ("Installing Missing Module...")
 		Import-Module -Name VM*
 	}
-	
+
 }
 
 function Check-FIPSEnabled()
 {
 <# Notes:
 	Checks to see if FIOS is enable.  If enabled, FIP will need to be disabled and the server rebotted
-#>	
-	
+#>
+
     $key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\FipsAlgorithmPolicy'
-    
+
     if ($PSVersionTable.PSVersion.Major -eq 5)  {
     	$value = (Get-ItempropertyValue -Path $key -Name Enabled).Enabled
 	}
-    
+
     if ($PSVersionTable.PSVersion.Major -eq 4)  {
         $value =  (Get-ItemProperty -Path $key -Name Enabled).Enabled
     }
@@ -111,9 +111,9 @@ function Get-Hostname ()
 {
 <# Notes:
 	Checks OS Version
-#>	
+#>
 	$hostname = $(hostname)
-	
+
 	return $hostname
 }
 
@@ -121,47 +121,47 @@ function Check-OSVersion ()
 {
 <# Notes:
 	Checks OS Version
-#>	
+#>
 	$sOS = Get-WmiObject -class Win32_OperatingSystem
-	
+
 	return $sOS.Caption
 }
 
 function Check-PsVersion ()
 {
-	
+
 	$major = $PSVersionTable.PSVersion.Major.ToString()
 	$minor = $PSVersionTable.PSVersion.Minor.ToString()
 	$build = $PSVersionTable.PSVersion.Build.ToString()
 	$revision = $PSVersionTable.PSVersion.Revision.ToString()
-	
+
 	if ($build -eq "-1") { $build = "0" }
 	if ($revision -eq "-1") { $revision = "0" }
-	
+
 	$myVer = $($major) + "." + $($minor) + "." + $($build) + "." + $($revision)
-	
+
 	return $myVer
 }
 
 function Perform-EnvChecks()
 {
-	
+
     Write-Output ("=======================================")
     Write-Output ("System Pre-Checks")
     Write-Output ("=======================================")
     # Get Hotname
 	$Hostname = Get-Hostname
 	Write-Output ("ConServer: $Hostname")
-	
+
 	# Check 1.  Get OS Version
 	$OSVersion = Check-OSVersion
 	Write-Output ("Check: $OSVersion")
-	
+
 	# Check 2. Powershell Version
 	$PSVersion = Check-PsVersion
 	Write-Output ("Check: PSVersion $PSVersion")
-	
-	#3 Check 3.  Is FIPS Enabled  
+
+	#3 Check 3.  Is FIPS Enabled
 	$FIPS = Check-FIPSEnabled
 	If ($FIPS -eq 1)
 	{
@@ -172,17 +172,17 @@ function Perform-EnvChecks()
 	{
 		Write-Output ("Check: FIPS Disabled")
 	}
-	
+
 	# Check 4.  is PowerCLI Installed
 	Check-PowerCLI
-	
+
 	# Check 5.  Is Vmware.View.Broker Installed
 	Check-VWWareViewBroker
 
     Write-Output ("=======================================")
     Write-Output ("End of System Pre-Checks               ")
     Write-Output ("=======================================")
-	
+
 }
 
 function Set-VarsAndLogging()
@@ -191,15 +191,15 @@ function Set-VarsAndLogging()
 	$DebugPreference = "Continue"
 	$VerbosePreference = "Continue"
 	$ErrorActionPreference = "Continue"
-	
+
 	$ScriptPath = "C:\Scripts\VDI\optimization.ps1"
 	$ScriptFolder = Split-Path $ScriptPath -Parent
 	$LogName = "optimization.log"
 	$LogFullPath = Join-Path -Path $ScriptFolder -ChildPath $LogName
-	
+
 	Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force -ErrorAction $ErrorActionPreference
 	Set-Location $ScriptFolder
-	
+
 	$ErrorActionPreference = "SilentlyContinue"
 	Stop-Transcript | Out-Null
 	$ErrorActionPreference = "Continue"
@@ -234,7 +234,7 @@ $Selector.SearchRoot = $LDAPEntry
 #Find all available pools
 $object = "pae-serverpooltype"
 $Pool_ID = "cn"
-#$Pools = $Selector.FindAll() | where {$_.Properties.objectcategory -match "CN=pae-ServerPool" -and $_.Properties.$Pool_ID -notlike "*Test*" -and $_.Properties.$object -eq "4"} 
+#$Pools = $Selector.FindAll() | where {$_.Properties.objectcategory -match "CN=pae-ServerPool" -and $_.Properties.$Pool_ID -notlike "*Test*" -and $_.Properties.$object -eq "4"}
 $Pools = $Selector.FindAll() | where { $_.Properties.objectcategory -match "CN=pae-ServerPool" -and $_.Properties.$Pool_ID -and $_.Properties.$object -eq "18" }
 
 ###################
@@ -260,7 +260,7 @@ Foreach ($Pool in $Pools)
 {
 	#"agentErrorText = OK"
 	$attribute = $Pool.Properties
-	
+
 	# Define what value we are looking for
 	$value = 'name'
 	$status = 'pae-vmprovenabled'
@@ -270,7 +270,7 @@ Foreach ($Pool in $Pools)
 	$PoolProvState = $attribute.$status
 	$PoolError_msg = $attribute.$msg
 	$PoolVMs = $attribute.$PoolMembers
-	
+
 	#Get Desktop Connection State
 	$RemoteSessions = @(Get-RemoteSession -pool_id $Pool -ErrorAction SilentlyContinue)
 	$RSessDNS = @($RemoteSessions | select DNSname -ErrorAction SilentlyContinue)
@@ -279,16 +279,16 @@ Foreach ($Pool in $Pools)
 	$RemoteSessCount = $RemoteSessions.count
 	$PoolVMsCount = $PoolVMs.count
 	$VCenterVMs = @(get-desktopvm -pool_id $pool | select Name, IPaddress)
-	
-	
+
+
 	#Create a selector and start searching from the path specified in $LDAPPath for VMs
 	$VMname = "pae-displayname"
 	$VMs = $Selector.FindAll() | where { $_.Properties.objectcategory -match "CN=pae-VM" -and $_.Properties.$VMname } #-notlike "*test*"
-	
+
 	clear-variable dirty, notdirty, ready, clone, maint, provisioned, delete, cust, maintdays, probvms, prepvms, IPMismatch, VcenterIP, FwdNSL, DnsIP, result, PrepParms, PrepvCenterNoIP -ErrorAction SilentlyContinue
 	clear-variable agentdisabled, AlreadyUsed, AgentUnreachable, DHCPErrors, available, PrepIPdiff, TestConn, PrepNoICMP, noICMP, Refreshing -ErrorAction SilentlyContinue
 	clear-variable ProbDesktops, PreparedforUse, ProvisionedDesktops, Preparing, PercentUtilized, PercentAvailable, PercentInError, testconn, DNSerrors -ErrorAction SilentlyContinue
-	
+
 	$ProbUsed = $null
 	$ProbUsed = @{ }
 	$ProbUnReach = $null
@@ -297,7 +297,7 @@ Foreach ($Pool in $Pools)
 	$ProbDisabled = @{ }
 	$ProbDHCP = $null
 	$ProbDHCP = @{ }
-	
+
 	$PrepMaint = $null
 	$PrepMaint = @{ }
 	$PrepOther = $null
@@ -314,12 +314,12 @@ Foreach ($Pool in $Pools)
 	$PrepvCenterNoIP = @{ }
 	$PrepDNS = $null
 	$PrepDNS = @{ }
-	
+
 	#Gather VM Info
 	ForEach ($VM in $VMs)
 	{
 		$attribute = $VM.Properties
-		
+
 		#Define VM values
 		$VMPool = 'pae-memberdnof'
 		$value = "pae-dirtyfornewsessions"
@@ -330,7 +330,7 @@ Foreach ($Pool in $Pools)
 		$refreshed = "pae-svivmrefreshed"
 		$VMpath = 'pae-vmpath'
 		$CN = "cn"
-		
+
 		#VM Pool Membership
 		$VMmember = $attribute.$VMPool
 		#VM Name
@@ -352,7 +352,7 @@ Foreach ($Pool in $Pools)
 		$refreshdate = $($vmrefresh).tostring()
 		$timediff = New-TimeSpan $refreshdate $date
 		$daysdiff = $timediff.TotalDays
-		
+
 		$Found = 0
 		$error.clear()
 		$AgentCheck = " "
@@ -362,11 +362,11 @@ Foreach ($Pool in $Pools)
 		$AgentOK = '.*agentErrorCode* = 0'
 		$DHCPProb = '169.254.*.*'
 		#$AgVer = '.*Pool:.*'
-		
+
 		If ($VMmember -match "CN=$($Pool),")
 		{
-			#write-output("Desktop: " + $VM_name + "-" + $vmrefresh + "-" + $vmstate + "-" + $VMProvStatus + " -"  + $VMDN)    
-			
+			#write-output("Desktop: " + $VM_name + "-" + $vmrefresh + "-" + $vmstate + "-" + $VMProvStatus + " -"  + $VMDN)
+
 			#Checks VM Availability
 			if ($VMProvStatus -eq "1")
 			{
@@ -377,7 +377,7 @@ Foreach ($Pool in $Pools)
 				if (-not ($Found))
 				{
 					$problemdesktop++
-					#write-output("Desktop: " + $VM_name + "-" + $vmrefresh + "-" + $vmstate + "-" + $VMDN)   
+					#write-output("Desktop: " + $VM_name + "-" + $vmrefresh + "-" + $vmstate + "-" + $VMDN)
 					$VcenterIP = ($VCenterVMs | where { $_.name -eq $($vm_name) } | select -ExpandProperty ipAddress)
 					if ($VcenterIP -eq "")
 					{
@@ -414,8 +414,8 @@ Foreach ($Pool in $Pools)
 							$PrepParms = ("vCenterIP: " + $VCenterIP).tostring()
 							$ProbDHCP.add($vm_name, $PrepParms)
 						} #Close of DHCP Probs
-					} #close of IP Check     
-				} #Close of notFound 
+					} #close of IP Check
+				} #Close of notFound
 			} #close of Dirty
 			else
 			{
@@ -426,13 +426,13 @@ Foreach ($Pool in $Pools)
 				elseif ("$VMstate" -eq "CUSTOMIZING")
 				{ $cust++ }
 				elseif ("$VMstate" -eq "DELETING")
-				{ $delete++ }			
+				{ $delete++ }
 				elseif ("$VMstate" -eq "CLONING")
 				{ $clone++ }
 				elseif ("$VMstate" -eq "MAINTENANCE")
 				{
 					$maint++
-					#$PrepVMs="MaintMode: " + $vm_name + "  VMDN: " + $vmdn          
+					#$PrepVMs="MaintMode: " + $vm_name + "  VMDN: " + $vmdn
 					if ($daysdiff -gt 1)
 					{
 						$maintdays++
@@ -450,11 +450,11 @@ Foreach ($Pool in $Pools)
 					{ $DnsIP = "Not Found" }
 					else
 					{ $DnsIP = ($FwdNSL[4].tostring()).TrimStart("Address:  ") }
-					
+
 					#Captures IP assigned for current VM as known by vCenter
 					$VcenterIP = ($VCenterVMs | where { $_.name -eq $($vm_name) } | select -ExpandProperty ipAddress)
-					
-					#Compares vCenter IP to Reverse DNS Resoultion for current VM      
+
+					#Compares vCenter IP to Reverse DNS Resoultion for current VM
 					$result = $VcenterIP.CompareTo($DnsIP)
 					if ($result -ne 0)
 					{
@@ -499,87 +499,87 @@ Foreach ($Pool in $Pools)
 							$PrepNoICMP.add($vm_name, $PrepParms)
 						} #close of ICMP
 					} #Close of Test Connection
-				} #close of Ready  
+				} #close of Ready
 			} #Close of notDirty
-		} #close of pool check          
-	} #close of each vm   
-	
-	
+		} #close of pool check
+	} #close of each vm
+
+
 	#Perform Session Calculations
 	if ($AlreadyUsed -eq $null)
 	{ $AlreadyUsed = 0 }
-	
+
 	if ($AgentUnreachable -eq $null)
 	{ $AgentUnreachable = 0 }
-	
+
 	if ($agentdisabled -eq $null)
 	{ $agentdisabled = 0 }
-	
+
 	if ($DHCPErrors -eq $null)
 	{ $DHCPErrors = 0 }
-	
+
 	if ($maintdays -eq $null)
 	{ $maintdays = 0 }
-	
+
 	if ($cust -eq $null)
 	{ $cust = 0 }
-	
+
 	if ($delete -eq $null)
 	{ $delete = 0 }
-	
+
 	if ($clone -eq $null)
 	{ $clone = 0 }
-	
+
 	if ($maint -eq $null)
 	{ $maint = 0 }
-	
+
 	if ($provisioned -eq $null)
 	{ $provisioned = 0 }
-	
+
 	if ($dirty -eq $null)
 	{ $dirty = 0 }
-	
+
 	if ($notdirty -eq $null)
 	{ $notdirty = 0 }
-	
+
 	if ($IPMismatch -eq $null)
 	{ $IPMismatch = 0 }
-	
+
 	if ($NoICMP -eq $null)
 	{ $NoICMP = 0 }
-	
+
 	if ($Refreshing -eq $null)
 	{ $Refreshing = 0 }
-	
+
 	if ($DNSErrors -eq $null)
 	{ $DNSErrors = 0 }
-	
+
 	$ProbDesktops = $AlreadyUsed + $AgentUnreachable + $agentDisabled + $DHCPErrors
 	$PreparingProbs = $noICMP + $IPMismatch + $Refreshing + $DNSErrors + $DHCPErrors
 	$Preparing = $delete + $cust + $clone + $maint + $PreparingProbs
 	$Available = $PoolVMsCount - ($RemoteSessCount + $ProbDesktops + $PreparingProbs)
 	$PreparedforUse = $PoolVMsCount - ($ProbDesktops + $PreparingProbs)
 	$ProvisionedDesktops = $PreparedforUse - ($RemoteSessCount + $available)
-	
+
 # 01/13/2020 - Added if statement for division by 0 errors
-	if( $PreparedforUse -eq 0) 
-	{$PercentUtilized = 0; $PercentInError = 0;} 
+	if( $PreparedforUse -eq 0)
+	{$PercentUtilized = 0; $PercentInError = 0;}
 	else {
-	$PercentUtilized = [decimal]::Round(($RemoteSessCount/$PreparedforUse) * 100) 
+	$PercentUtilized = [decimal]::Round(($RemoteSessCount/$PreparedforUse) * 100)
 	$PercentInError = [decimal]::Round(($ProbDesktops/$PreparedforUse) * 100)
 	}
 
 	$PercentAvailable = 100 - $PercentUtilized - $PercentInError
 
 	Write-Output ("Pool: " + $Pool + ", VMsInPool: " + $PoolVMsCount + ", AvailableVMs: " + $available + ", ConnectedSessions: " + $connected + ", DisconnectedSessions: " + $disconnected + ", SessionsInUse: " + $RemoteSessCount + ", PercentUtilized: " + $PercentUtilized + "%, PercentAvailable: " + $PercentAvailable + "%, Preparing: " + $Preparing + "%, Problem: " + $ProbDesktops)
-	
-} #Close of pools    
+
+} #Close of pools
 
 Write-Output ("=======================================")
 Write-Output ("End Of Pools                           ")
 Write-Output ("=======================================")
 
-#CB Health Status 
+#CB Health Status
 $CBMonitorIDs = get-monitor -monitor cbmonitor | Select -ExpandProperty monitor_id
 
 Write-Output (" ")
@@ -597,7 +597,7 @@ ForEach ($CBMonitorID in $CBMonitorIDs)
 	$cbstatusvalues = get-monitor -monitor cbmonitor | where { $_.monitor_id -eq $CBMonitorID } | select -ExpandProperty statusValues
 	if ($cbstatusvalues -like "*=ok*")	{ $cbstatus = 1 }	else 	{ $cbstatus = 0 }
 
-	
+
 	Write-Output ("Connection Broker: " + $CBMonitorID + " Online: " + $cbonline + " Status: " + $cbstatus)
 	#Write-Output ("Online: " + $cbonline)
 	#Write-Output ("Status: " + $cbstatus)
@@ -607,7 +607,7 @@ Write-Output ("=======================================")
 Write-Output ("End of CB Health Status                ")
 Write-Output ("=======================================")
 
-#CB Session Metrics  
+#CB Session Metrics
 $cbcluster = get-monitor -monitor CBMonitor | where { $_.id -like "*-con01" } | select -ExpandProperty clusterid
 $cbTotalses = get-monitor -monitor CBMonitor | where { $_.id -like "*-con01" } | select -ExpandProperty totalsessions
 $cbTotalHigh = get-monitor -monitor CBMonitor | where { $_.id -like "*-con01" } | select -ExpandProperty totalsessionshigh
@@ -648,7 +648,7 @@ Write-Output (" ")
 Write-Output ("=======================================")
 Write-Output ("VC Health Status                       ")
 Write-Output ("=======================================")
-Write-Output ("Server: " +$vcServer + " State: " + $vcOK + " Status: " + $vcbrokerOK + " Connected: " + $vcbrokerconnected)
+Write-Output ("Server: " +$vcServer + " State: " + $vcOK + " Status: " + $vcbrokerOK + " Connected: " + $vcbrokerconnected + " Composer Enabled: " + $vccomposerOK)
 Write-Output ("=======================================")
 Write-Output ("End of VC Health Status                ")
 Write-Output ("=======================================")
@@ -666,7 +666,7 @@ ForEach ($ADMonitorID in $ADMonitorIDs)
 {
 	$addomain = get-monitor -monitor domainmonitor | where{ $_.monitor_id -eq $ADMonitorID } | select -ExpandProperty domains
 	$adstatus = get-monitor -monitor domainmonitor | where{ $_.monitor_id -eq $ADMonitorID } | select -ExpandProperty isProblem
-	
+
     if ($adstatus -eq $false) {$isFalse = 1} else {$isFalse = 0}
     Write-Output ("Server: " + $ADMonitorID + ", AD Status: " + $isFalse)
 }
@@ -692,33 +692,33 @@ Write-Output ("End of DB Health Status                ")
 Write-Output ("=======================================")
 
 #SG Status
-$SGMonitorIDs = get-monitor -monitor sgmonitor| Select -ExpandProperty monitor_id 
+$SGMonitorIDs = get-monitor -monitor sgmonitor| Select -ExpandProperty monitor_id
 Write-Output (" ")
 Write-Output (" ")
 Write-Output ("==============================")
 Write-Output ("Security Gateway Health Status")
-Write-Output ("==============================")     
-     
-     
+Write-Output ("==============================")
+
+
 #Loop through the pools
 ForEach ($SGMonitorID in $SGMonitorIDs)
 {
     $sgalive = get-monitor -monitor sgmonitor |where{$_.monitor_id -eq $SGMonitorID}| select -ExpandProperty isalive
     if ($sgalive -like "*true*") {$sgonline = 1} else {$sgonline = 0}
-                   
+
     $sgstatus = get-monitor -monitor sgmonitor|where{$_.monitor_id -eq $SGMonitorID}|  select -ExpandProperty statusValues
     if ($sgstatus -like "*ok*") {$sgstatusOK = 1} else  {$sgstatusOK = 0}
-                    
+
     $sgtotsess = get-monitor -monitor sgmonitor|where{$_.monitor_id -eq $SGMonitorID}| select -ExpandProperty totalSessions
     $sgtunnelsess = get-monitor -monitor sgmonitor|where{$_.monitor_id -eq $SGMonitorID}| select -ExpandProperty tunnelSessions
     $sgpcoipsess = get-monitor -monitor sgmonitor|where{$_.monitor_id -eq $SGMonitorID}| select -ExpandProperty PCoIPSessions
     $sgcertvalid = get-monitor -monitor sgmonitor|where{$_.monitor_id -eq $SGMonitorID}| select -ExpandProperty certValid
 
-    if ($sgcertvalid -like "*true*") {$sgcertOK = 1} else {$sgcertOK = 0} 
-    
+    if ($sgcertvalid -like "*true*") {$sgcertOK = 1} else {$sgcertOK = 0}
+
     $sgcertexpire = get-monitor -monitor sgmonitor|where{$_.monitor_id -eq $SGMonitorID}| select -ExpandProperty certAboutToExpire
-    if ($sgcertexpire -like "*false*") {$sgcert_expire = 0} else {$sgcert_expire = 1}   
-                              
+    if ($sgcertexpire -like "*false*") {$sgcert_expire = 0} else {$sgcert_expire = 1}
+
     #Output Security Gateway Status
     Write-Output ("==============================")
     Write-Output ("Security Server: "+ $SGMonitorID + " Online: " + $sgonline + " Status: " + $sgstatusOK + " Total Sessions: " + $sgtotsess + " Cert Valid: " + $sgcertOK + " Cert About to Expire: " + $sgcert_expire)
