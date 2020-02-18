@@ -19,7 +19,7 @@ package.path = package.path .. ";./scripts/includes/?.lua"
 local str_beg, str_end = string.find (SCRIPT_NAME,".",1,true)
 local logfile = "./script_logs/" .. left (SCRIPT_NAME, str_beg-1) ..
    "-" .. timestamp.format ( timestamp.now(), "%Y%m%d%H") .. ".log"
-local output_location = 3 -- 1 = stdout; 2 = file; 3 = both
+local output_location = 2 -- 1 = stdout; 2 = file; 3 = both
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
