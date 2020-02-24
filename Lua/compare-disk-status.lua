@@ -1,39 +1,20 @@
----------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 -- script : compare-disk-status.lua
 -- author : Dan Gill
 -- January 2019
--- version: 2.01
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
--- desc   : The intention of this script is to email a list of SQL commands for drives
--- added/removed.
--- This script should be run by the nas with arguments passed to it. The only parameter
--- is the hub name to process or ALL for all hubs.
--- Alternatively, the script may be run manually and will use the variables provided in the script.
--- The folder "script_logs" *MUST* be manually created under the nas directory prior to running this
--- script.
----------------------------------------------------------------------------------------------------        
----------------------------------------------------------------------------------------------------
--- Version  | Details
----------------------------------------------------------------------------------------------------
--- 1.0      | Initial Version
--- 1.1      | 1/31/2019 - Added hubs and drives to exclude hash tables to skip certain hubs and
---            robot/drive combinations from processing.
--- 1.2      | 2/7/2019 - Changed email to indicate when file is empty.
--- 1.3      | 2/13/2019 - Replaced for loop for disk check with hash table in get_disk_status.
--- 1.4      | 2/15/2019 - Added regular expression testing to eliminate robots from processing
--- 1.5      | 6/11/2019 - Removed clustered disks from output by adding them to exclude table
--- 1.6      | 6/17/2019 - Remove robots from lookup that aren't in CM_NIMBUS_ROBOT
--- 1.7      | 6/21/2019 - Excluded FileSystemType CSVFS - Cluster drives
--- 1.8      | 7/17/2019 - Simplified cluster check. Also added output for error robot.
--- 1.9      | 7/18/2019 - Fixed FileSystemType CSVFS check.
--- 2.00     | 12/19/2019 - Added Brian Nelson to distribution list
--- 2.01     | 01/09/2020 - Added database.close() commands.
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
----------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- desc   : The intention of this script is to email a list of SQL commands for
+-- drives added/removed.
+-- This script should be run by the nas with arguments passed to it. The only
+-- parameter is the hub name to process or ALL for all hubs.
+-- Alternatively, the script may be run manually and will use the variables
+-- provided in the script.
+-- The folder "script_logs" *MUST* be manually created under the nas directory
+-- prior to running this script.
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
 
 -----------------------------------------------------------------------
 -----------------------------------------------------------------------
@@ -41,10 +22,13 @@
 -----------------------------------------------------------------------
 -----------------------------------------------------------------------
 
-package.path = package.path .. ";./scripts/includes/?.lua" -- Where are your require files?
+-- Where are your require files?
+package.path = package.path .. ";./scripts/includes/?.lua"
 
-local hub = "dagbur-nshub101" -- Specify hub (hub name only, full path isn't needed) or ALL
-local recipients = "asurati@gocloudwave.com,bnelson@gocloudwave.com,degts@gocloudwave.com,dgill@gocloudwave.com,rgaines@gocloudwave.com"
+-- Specify hub (hub name only, full path isn't needed) or ALL
+local hub = "dagbur-nshub101"
+local recipients = "asurati@gocloudwave.com,bnelson@gocloudwave.com,"..
+   "degts@gocloudwave.com,dgill@gocloudwave.com,rgaines@gocloudwave.com"
 local output_location = 2 -- 1 = stdout; 2 = file; 3 = both
 -- Hash table of hubs that should not be processed
 local hubs_to_exclude = {
@@ -71,7 +55,7 @@ local drives_to_exclude = {
    ["/NMS/TXOS-NSRELAY01/txos-hdlc-bu01"] = {["X"] = true,},
 -- End block of BU servers
 }
-local query = "select D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X ,Y, Z from disk_monitoring_lookup where robot_address = '"
+local query = "select D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, W, X ,Y, Z from disk_monitoring_lookup where robot_address = '"
 local delete_old_robots = "delete from disk_monitoring_lookup where robot_address not in (select address from CM_NIMBUS_ROBOT);"
 
 
@@ -139,7 +123,7 @@ local function get_robotlist(hub_addr)
       codes_file(rc,logfname,output_location)
       return nil, rc
    end
-  
+
 end
 
 -----------------------------------------------------------------------
@@ -153,29 +137,29 @@ local function get_disk_status(robot_addr)
    local disks = {
       ["D"]=1,["E"]=1,["F"]=1,["G"]=1,["H"]=1,["I"]=1,["J"]=1,
       ["K"]=1,["L"]=1,["M"]=1,["N"]=1,["O"]=1,["P"]=1,["Q"]=1,["R"]=1,["S"]=1,
-      ["T"]=1,["U"]=1,["V"]=1,["W"]=1,["X"]=1,["Y"]=1,["Z"]=1
+      ["T"]=1,["U"]=1,["W"]=1,["X"]=1,["Y"]=1,["Z"]=1
                  }
 
    -- Start with all disks set to no monitoring
    local robot_disks = { ["robot_addr"] = robot_addr, ["D"]=0,["E"]=0,["F"]=0,["G"]=0,["H"]=0,["I"]=0,["J"]=0,
                          ["K"]=0,["L"]=0,["M"]=0,["N"]=0,["O"]=0,["P"]=0,["Q"]=0,["R"]=0,["S"]=0,
-                         ["T"]=0,["U"]=0,["V"]=0,["W"]=0,["X"]=0,["Y"]=0,["Z"]=0
+                         ["T"]=0,["U"]=0,["W"]=0,["X"]=0,["Y"]=0,["Z"]=0
                        }
    -- Start with all disks set to local
    local cluster_disks = {["D"]=0,["E"]=0,["F"]=0,["G"]=0,["H"]=0,["I"]=0,["J"]=0,
                          ["K"]=0,["L"]=0,["M"]=0,["N"]=0,["O"]=0,["P"]=0,["Q"]=0,["R"]=0,["S"]=0,
-                         ["T"]=0,["U"]=0,["V"]=0,["W"]=0,["X"]=0,["Y"]=0,["Z"]=0
+                         ["T"]=0,["U"]=0,["W"]=0,["X"]=0,["Y"]=0,["Z"]=0
                        }
-   
+
    local skip = 1 -- Use this to skip output if no drives found other than C:\
 
    local disk_status, rc = nimbus.request(robot_addr .. "/cdm", "disk_status")
-   
+
    if rc == NIME_OK then -- If disk_status command is successful
       local disk_status_data = disk_status.data -- truncate data table to necessary components
 
       local cluster_info, rc_cluster = nimbus.request(robot_addr .. "/cdm", "cluster_info")
-      
+
       if rc_cluster == NIME_OK then -- If cluster_info command is successful
          local cluster_disk = cluster_info.disk -- truncate data table to necessary components
 
@@ -185,14 +169,14 @@ local function get_disk_status(robot_addr)
             end
          end
       end
-      
+
       -- Make sure data table isn't empty
       if disk_status_data ~= nil then
          -- Added to troubleshoot why clustered disks are appearing for this server
          -- if robot_addr == "/NMS/ohmt-nshub01/ohmt-hvc008" then
             -- tdump_file(disk_status_data, logfname, output_location)
          -- end
-         
+
          for k,_ in pairs (disk_status_data) do -- Cycle through all disks on robot
 
             if drives_to_exclude[robot_addr] ~= nil then -- See if robot is in exclude list
@@ -212,17 +196,17 @@ local function get_disk_status(robot_addr)
             end
          end
       end
-      
+
       if skip == 0 then -- Return findings
          return robot_disks, rc
       else -- Return nil if nothing should be done
          return nil, 120 -- Using return code 120 for skipping output
       end
    end
-   
+
    -- Return nil because callback failed
    return nil, rc
-   
+
 end
 
 -----------------------------------------------------------------------
@@ -233,36 +217,36 @@ end
 
 local function check_table_data(fquery)
    database.open("provider=nis;database=nis;driver=none")
-   
+
    local result,rc,err = database.query(fquery)
    database.close()
-   
+
    if rc == NIME_OK then
       return result[1] -- Return table from DB query
    else
       return nil
    end
-   
+
 end
 
 local function delete_old_records(fquery)
    database.open("provider=nis;database=nis;driver=none")
-   
+
    local result,rc,err = database.query(fquery)
    database.close()
-   
+
    if rc == NIME_OK then
       return rc -- Return table from DB query
    else
       return nil
    end
-   
+
 end
 
 -- Email a file
 local function email_file(to, subject, path)
    local stats = file.stat(path)
-   
+
    if stats.size > 0 then
       local buf = file.read(path, "r")
       action.email(to, subject, buf)
@@ -305,7 +289,7 @@ local function main()
                      local table_details = check_table_data(query .. robotlist[key].addr .. "'")
                      -- Check that probe callback returned a table
                      if rc_details == NIME_OK and robot_details ~= nil then
-                        -- Check that DB query returned a table 
+                        -- Check that DB query returned a table
                         if table_details ~= nil then
                            local set_disks = nil
                            for k_disk, _ in pairs (table_details) do -- Cycle through each drive letter from DB
@@ -322,7 +306,7 @@ local function main()
                               output(sqlfname, "update disk_monitoring_lookup set " .. set_disks .. " where robot_address = '" .. robotlist[key].addr .. "'; -- Updates a robot that has multiple drives already.", output_location)
                            end
                         else -- If DB query didn't return a table then a record may need to be added to the DB
-                           output(sqlfname, "insert into disk_monitoring_lookup values ('" .. robotlist[key].addr .. "', '" .. robot_details["D"] .. "', '" .. robot_details["E"] .. "', '" .. robot_details["F"] .. "', '" .. robot_details["G"] .. "', '" .. robot_details["H"] .. "', '" .. robot_details["I"] .. "', '" .. robot_details["J"] .. "', '" .. robot_details["K"] .. "', '" .. robot_details["L"] .. "', '" .. robot_details["M"] .. "', '" .. robot_details["N"] .. "', '" .. robot_details["O"] .. "', '" .. robot_details["P"] .. "', '" .. robot_details["Q"] .. "', '" .. robot_details["R"] .. "', '" .. robot_details["S"] .. "', '" .. robot_details["T"] .. "', '" .. robot_details["U"] .. "', '" .. robot_details["V"] .. "', '" .. robot_details["W"] .. "', '" .. robot_details["X"] .. "', '" .. robot_details["Y"] .. "', '" .. robot_details["Z"] .. "'); -- This is either a new robot or the first time a drive other than C:\ is being added to the device.", output_location)
+                           output(sqlfname, "insert into disk_monitoring_lookup values ('" .. robotlist[key].addr .. "', '" .. robot_details["D"] .. "', '" .. robot_details["E"] .. "', '" .. robot_details["F"] .. "', '" .. robot_details["G"] .. "', '" .. robot_details["H"] .. "', '" .. robot_details["I"] .. "', '" .. robot_details["J"] .. "', '" .. robot_details["K"] .. "', '" .. robot_details["L"] .. "', '" .. robot_details["M"] .. "', '" .. robot_details["N"] .. "', '" .. robot_details["O"] .. "', '" .. robot_details["P"] .. "', '" .. robot_details["Q"] .. "', '" .. robot_details["R"] .. "', '" .. robot_details["S"] .. "', '" .. robot_details["T"] .. "', '" .. robot_details["U"] .. "', '0', ''" .. robot_details["W"] .. "', '" .. robot_details["X"] .. "', '" .. robot_details["Y"] .. "', '" .. robot_details["Z"] .. "'); -- This is either a new robot or the first time a drive other than C:\ is being added to the device.", output_location)
                         end
                      elseif rc_details == 120 then -- No other drives discovered
                         if table_details ~= nil then -- However, record is in disk_monitoring_lookup table
@@ -338,10 +322,10 @@ local function main()
          end
       end
    end
-   
+
    output(logfname, timestamp.format ( timestamp.now(), "%Y-%m-%d %H:%M:%S").." INFO: Script has completed running.", output_location)
    email_file(recipients, left (SCRIPT_NAME, str_beg-1) .. "-" .. hub, sqlfname)
-   
+
 end
 
 main()
