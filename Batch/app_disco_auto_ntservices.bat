@@ -1,5 +1,6 @@
 @echo off
-set "startmode=auto"
-for /f "skip=1 delims=" %%a in ('wmic service where "startmode='%startmode%'" get name ^| findstr /r /v "^$" ') do (
-   echo Services=%%a
+setlocal enabledelayedexpansion
+
+for /f "skip=3 delims=" %%a in ('C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -command "& {&Get-WmiObject Win32_service | Where-Object {$_.StartMode -Match 'Auto'} | FT Name -auto}"') do (
+echo Services=%%a
 )
