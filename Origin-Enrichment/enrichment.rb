@@ -39,7 +39,7 @@ if File.file?('F:\Nimsoft\probes\slm\qos_processor\lib\sqljdbc6-6.2.2.jar')
       b = con.create_statement
 
       case $monitor.probe
-      when 'vmware'
+      when "vmware"
 
          vmware_query = vmware_query + $monitor.source + "' AND sqs.target = '" + $monitor.target + "' AND sqs.qos = '" +$monitor.qos + "' AND sqs.robot = '" + $monitor.robot + "';"
 
@@ -56,8 +56,8 @@ if File.file?('F:\Nimsoft\probes\slm\qos_processor\lib\sqljdbc6-6.2.2.jar')
          end
 
          rs.close
-      # Match SNMPcollector for ohos-snmp01 or txos-snmp01 ONLY
-      when 'pollagent'
+      # Match SNMPcollector and net_connect for ohos-snmp01 or txos-snmp01 ONLY
+   when "pollagent","net_connect"
          if ($monitor.robot[/(?:oh|tx)os-snmp01/])
             # Change source to all caps
             # Look for two common naming standards: Starts with C/L/R and a number
