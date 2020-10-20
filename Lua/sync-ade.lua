@@ -181,7 +181,11 @@ function delete_package_distsrv (distsrv,package,version)
       output(fname, timestamp.format(timestamp.now(), "%Y-%m-%d %H:%M:%S") ..
          " WARNING: Failed to delete " .. package .. " " .. version .. " from "
          .. distsrv, output_location)
-      codes_file(rc,fname,output_location)
+      if type(rc) == "table" then
+         tdump_file(rc,fname,output_location)
+      else
+         codes_file(rc,fname,output_location)
+      end
    else
       output(fname, timestamp.format(timestamp.now(), "%Y-%m-%d %H:%M:%S") ..
          " WARNING: Empty return code received while deleting " .. package ..
