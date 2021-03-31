@@ -16,13 +16,13 @@ if File.file?(jar_file)
    require(jar_file)
 
    #==========Change the following variables according to your needs==========#
-   ip="10.200.2.7"
+   ip="IP or DNS"
    port="1433"
-   db="CA_UIM_PPI"
+   db="CA_UIM"
    driver="jdbc:sqlserver://"
    driverClass="com.microsoft.sqlserver.jdbc.SQLServerDriver"
-   user="***REMOVED***"
-   passwd="***REMOVED***"
+   user="USER"
+   passwd="PASSWORD"
    vmware_query = "SELECT DISTINCT cma.description, cmao.origin, sqs.source FROM cm_account cma JOIN cm_account_ownership cmao ON cma.account_id = cmao.account_id JOIN CM_DEVICE_ATTRIBUTE cmda ON cmda.dev_attr_value = cma.description JOIN CM_CONFIGURATION_ITEM cmci ON cmda.dev_id = cmci.dev_id JOIN CM_CONFIGURATION_ITEM_METRIC cmcim ON cmci.ci_id = cmcim.ci_id JOIN S_QOS_DATA sqs ON cmcim.ci_metric_id = sqs.ci_metric_id WHERE cmda.dev_attr_key = 'vmware.ResourcePoolvAppPath' AND sqs.source NOT LIKE '[0-9]%' AND sqs.source = '"
    mnemonic_query = "SELECT DISTINCT cmao.origin, cma.name FROM cm_account cma JOIN cm_account_ownership cmao ON cma.account_id = cmao.account_id WHERE LEFT(cma.name, IIF(CHARINDEX(' ', cma.name)>0,CHARINDEX(' ', cma.name)-1,0)) = '"
    #==========================================================================#
